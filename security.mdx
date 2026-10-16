@@ -1,0 +1,59 @@
+---
+title: "Security"
+description: "Choose who can call your server."
+---
+
+Set **Security Type** when you create or edit a server.
+
+| Mode | What the client needs |
+| --- | --- |
+| Public | The server URL |
+| Unlisted | The URL with its secret key |
+| API Key | The server URL and the generated API key |
+| OAuth | The server URL and an access token from your authorization server |
+
+## Public
+
+Anyone with the URL can call the server. Use it for public data.
+
+```text
+https://your-server.trymcp.io/mcp
+```
+
+## Unlisted
+
+Copy the full endpoint from the server page. Keep it private. Anyone with this URL can call the server.
+
+```text
+https://your-server.trymcp.io/mcp/YOUR_SECRET_KEY
+```
+
+Regenerating the secret key changes the URL your clients need.
+
+## API Key
+
+Copy the **API Key** from the server form. Send it in the Authorization header:
+
+```text
+Authorization: Bearer YOUR_API_KEY
+```
+
+The server validates the generated key. After regenerating it, update your clients.
+
+## OAuth
+
+Enter your **OAuth Authorization Server URL**. This is a metadata URL, such as:
+
+```text
+https://auth.example.com/.well-known/oauth-authorization-server
+```
+
+The form checks for `issuer`, `authorization_endpoint`, `token_endpoint`, `registration_endpoint`, and `jwks_uri`.
+
+Configure your authorization server first. TryMCP uses its metadata to verify access tokens. Use a client that supports the provider's OAuth flow.
+
+## Connect
+
+The **Integration** tab generates client configs for your server. API Key configs include the Authorization header. Unlisted configs include the secret URL.
+
+Treat copied configs as credentials when they contain a key.

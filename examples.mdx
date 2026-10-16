@@ -1,0 +1,363 @@
+---
+title: "Examples"
+description: "Copy a tool body. Add its inputs and secrets."
+---
+
+Paste one example into the [tool editor](/tools). Add its listed parameters and [secrets](/secrets).
+
+Database examples need your own tables and data. PostgreSQL examples use these secrets: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`. Set `DB_PORT` to `5432` unless your database uses another allowed port.
+
+## GET with authentication
+
+Parameters: `repo` (required string, such as `octocat/Hello-World`). Secret: `GITHUB_TOKEN`.
+
+```javascript
+const response = await sdk.http({
+  url: `https://api.github.com/repos/${params.repo}`,
+  headers: {
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    "User-Agent": "TryMCP-Tool",
+  },
+});
+
+if (!response.ok) {
+  throw new Error(`GitHub returned ${response.status}`);
+}
+
+const repo = response.json();
+
+return {
+  name: repo.full_name,
+  stars: repo.stargazers_count,
+  forks: repo.forks_count,
+  language: repo.language,
+  topics: repo.topics,
+};
+```
+
+See the [GitHub repository API](https://docs.github.com/en/rest/repos/repos#get-a-repository) for token access requirements.
+
+## POST a JSON body
+
+Send an email with SendGrid. Use a verified sender in `SENDER_EMAIL`.
+
+Parameters: `to`, `subject`, `body` (required strings). Secrets: `SENDGRID_API_KEY`, `SENDER_EMAIL`.
+
+```javascript
+const response = await sdk.http({
+  method: "POST",
+  url: "https://api.sendgrid.com/v3/mail/send",
+  headers: { Authorization: `Bearer ${env.SENDGRID_API_KEY}` },
+  body: {
+    personalizations: [{ to: [{ email: params.to }] }],
+    from: { email: env.SENDER_EMAIL },
+    subject: params.subject,
+    content: [{ type: "text/plain", value: params.body }],
+  },
+});
+
+if (!response.ok) {
+  throw new Error(`SendGrid returned ${response.status}`);
+}
+
+return { status: response.status, accepted: true };
+```
+
+An accepted request does not confirm delivery. See [SendGrid Mail Send](https://www.twilio.com/docs/sendgrid/api-reference/mail-send/mail-send).
+
+## Webhook relay
+
+Parameters: `event` (required string), `payload` (required object). Secrets: `WEBHOOK_URL`, `WEBHOOK_SECRET`.
+
+Use your HTTPS webhook URL. Its receiver must accept this body and the `X-Webhook-Secret` header.
+
+```javascript
+const response = await sdk.http({
+  method: "POST",
+  url: env.WEBHOOK_URL,
+  headers: { "X-Webhook-Secret": env.WEBHOOK_SECRET },
+  body: {
+    event: params.event,
+    data: params.payload,
+    timestamp: new Date().toISOString(),
+  },
+});
+
+return { status: response.status, accepted: response.ok };
+```
+
+## Select with filters
+
+Parameters: `userId` (required string), `status` (optional string). Use the PostgreSQL secrets listed above.
+
+```javascript
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  const filters = { user_id: params.userId };
+
+  if (params.status) {
+    filters.status = params.status;
+  }
+
+  const orders = await db.select("orders", filters);
+
+  return { count: orders.length, orders };
+} finally {
+  await db.destroy();
+}
+```
+
+## Insert a record
+
+Parameters: `name`, `email` (required strings), `role` (optional string). Use the PostgreSQL secrets.
+
+The `users` table needs `id`, `name`, `email`, `role`, and `created_at` columns.
+
+```javascript
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  const records = await db.query(
+    "INSERT INTO users (name, email, role, created_at) VALUES (?, ?, ?, ?) RETURNING id",
+    [params.name, params.email, params.role ?? "member", new Date().toISOString()],
+  );
+
+  return { id: records[0].id };
+} finally {
+  await db.destroy();
+}
+```
+
+## SQL with pagination
+
+Parameters: `category` (required string), `page`, `pageSize` (optional numbers). Use the PostgreSQL secrets.
+
+This query uses `products` and `categories` tables.
+
+```javascript
+const page = params.page ?? 1;
+const pageSize = params.pageSize ?? 20;
+
+if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+  throw new Error("Use a positive page and a pageSize from 1 to 100");
+}
+
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  const products = await db.query(
+    "SELECT p.id, p.name, p.price, p.stock FROM products p JOIN categories c ON c.id = p.category_id WHERE c.slug = ? ORDER BY p.id LIMIT ? OFFSET ?",
+    [params.category, pageSize, (page - 1) * pageSize],
+  );
+  const counts = await db.query(
+    "SELECT COUNT(*) AS total FROM products p JOIN categories c ON c.id = p.category_id WHERE c.slug = ?",
+    [params.category],
+  );
+
+  return { page, pageSize, total: Number(counts[0].total), products };
+} finally {
+  await db.destroy();
+}
+```
+
+## MySQL query
+
+Parameter: `email` (required string). Secrets: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DB`, `MYSQL_USER`, `MYSQL_PASSWORD`.
+
+```javascript
+const db = await sdk.db({
+  type: "mysql2",
+  connection: {
+    host: env.MYSQL_HOST,
+    port: Number(env.MYSQL_PORT || 3306),
+    database: env.MYSQL_DB,
+    user: env.MYSQL_USER,
+    password: env.MYSQL_PASSWORD,
+  },
+});
+
+try {
+  const users = await db.select("users", { email: params.email });
+
+  return { found: users.length > 0, user: users[0] ?? null };
+} finally {
+  await db.destroy();
+}
+```
+
+## Group and summarize data
+
+Parameter: `userId` (required string). Use the PostgreSQL secrets. Order rows need `status`, `created_at`, and numeric `amount` values.
+
+```javascript
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  const orders = await db.select("orders", { user_id: params.userId });
+  const lodash = sdk.lodash;
+
+  return {
+    totalOrders: orders.length,
+    totalSpent: lodash.sumBy(orders, order => Number(order.amount)),
+    statusCounts: lodash.countBy(orders, "status"),
+    recentOrders: lodash.orderBy(orders, ["created_at"], ["desc"]).slice(0, 5),
+  };
+} finally {
+  await db.destroy();
+}
+```
+
+## Remove duplicates and filter
+
+Parameter: `query` (required string). Secrets: `API_URL`, `API_KEY`.
+
+Set `API_URL` to your HTTPS API base URL. This example expects a `/search` endpoint that returns a `results` array.
+
+```javascript
+const response = await sdk.http({
+  url: `${env.API_URL}/search?q=${encodeURIComponent(params.query)}`,
+  headers: { Authorization: `Bearer ${env.API_KEY}` },
+});
+
+if (!response.ok) {
+  throw new Error(`Search returned ${response.status}`);
+}
+
+const lodash = sdk.lodash;
+const unique = lodash.uniqBy(response.json().results, "id");
+const active = unique.filter(item => item.status === "active");
+const items = active.map(item => lodash.pick(item, ["id", "name", "category", "score"]));
+const results = lodash.orderBy(items, ["score"], ["desc"]).slice(0, 10);
+
+return { count: results.length, results };
+```
+
+## API call and database write
+
+Parameter: `repo` (required string). Secrets: `GITHUB_TOKEN` and the PostgreSQL secrets.
+
+The `repo_snapshots` table needs `id`, `repo_name`, `stars`, `forks`, `language`, and `captured_at` columns.
+
+```javascript
+const response = await sdk.http({
+  url: `https://api.github.com/repos/${params.repo}`,
+  headers: {
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    "User-Agent": "TryMCP-Tool",
+  },
+});
+
+if (!response.ok) {
+  throw new Error(`GitHub returned ${response.status}`);
+}
+
+const repo = response.json();
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  const records = await db.query(
+    "INSERT INTO repo_snapshots (repo_name, stars, forks, language, captured_at) VALUES (?, ?, ?, ?, ?) RETURNING id",
+    [repo.full_name, repo.stargazers_count, repo.forks_count, repo.language, new Date().toISOString()],
+  );
+
+  return { repo: repo.full_name, stars: repo.stargazers_count, snapshotId: records[0].id };
+} finally {
+  await db.destroy();
+}
+```
+
+## Handle errors and enrich a result
+
+Parameter: `userId` (required string). Secrets: `API_URL`, `API_KEY`, and the PostgreSQL secrets.
+
+Set `API_URL` to your HTTPS API base URL. Its `/users/:id` endpoint must return a user with `id`, `name`, and `email`.
+
+```javascript
+const response = await sdk.http({
+  url: `${env.API_URL}/users/${encodeURIComponent(params.userId)}`,
+  headers: { Authorization: `Bearer ${env.API_KEY}` },
+});
+
+if (response.status === 404) {
+  return { found: false };
+}
+
+if (!response.ok) {
+  console.error("User lookup failed", response.status);
+  throw new Error(`API returned ${response.status}`);
+}
+
+const user = response.json();
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  const orders = await db.select("orders", { user_id: params.userId });
+
+  return {
+    found: true,
+    user: { id: user.id, name: user.name, email: user.email },
+    stats: {
+      totalOrders: orders.length,
+      totalSpent: sdk.lodash.sumBy(orders, order => Number(order.amount)),
+      lastOrder: sdk.lodash.maxBy(orders, "created_at")?.created_at ?? null,
+    },
+  };
+} finally {
+  await db.destroy();
+}
+```

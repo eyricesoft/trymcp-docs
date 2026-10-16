@@ -1,0 +1,51 @@
+---
+title: "Cursor and VS Code"
+description: "Add your server URL to Cursor or VS Code."
+---
+
+Your server's **Integration** tab has a config for each client. Copy it, or use the examples below.
+
+## Cursor
+
+Add this entry to `.cursor/mcp.json` in your project. Keep any existing servers.
+
+```json
+{
+  "mcpServers": {
+    "trymcp": {
+      "url": "https://your-server.trymcp.io/mcp"
+    }
+  }
+}
+```
+
+## VS Code
+
+Add this entry to `.vscode/mcp.json` in your project. Keep any existing servers.
+
+```json
+{
+  "servers": {
+    "trymcp": {
+      "type": "http",
+      "url": "https://your-server.trymcp.io/mcp"
+    }
+  }
+}
+```
+
+## Private servers
+
+Replace the URL with your endpoint. For **Unlisted**, include its secret path.
+
+For **API Key**, add `headers` beside `url` inside the server entry:
+
+```json
+{
+  "Authorization": "Bearer YOUR_API_KEY"
+}
+```
+
+Use this object as the value of `headers`. Replace `YOUR_API_KEY` with your key. Keep files with credentials out of version control.
+
+For **OAuth**, use the client's sign-in flow for your provider. Enable the server in the client and check that your active tools appear.

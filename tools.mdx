@@ -1,0 +1,49 @@
+---
+title: "Tools"
+description: "Write a tool and test it in the browser."
+---
+
+## Create a tool
+
+Open a server and click **Create New Tool**.
+
+1. Enter a name such as `get_orders`.
+2. Add the inputs your code needs.
+3. Write the tool body in the editor.
+4. Keep **Active** on and click **Create**.
+
+For an existing tool, click **Save** after editing.
+
+## Parameters
+
+Add a key, type, and description for each input. Mark it optional only when your code can run without it.
+
+Available types are `string`, `number`, `boolean`, `object`, and `array`.
+
+Read inputs from `params`:
+
+```javascript
+const name = params.name?.trim();
+
+if (!name) {
+  throw new Error("Enter a name");
+}
+
+return { message: `Hello, ${name}` };
+```
+
+This example needs a required string parameter named `name`.
+
+## Editor
+
+The editor has syntax highlighting and SDK suggestions. Write JavaScript directly. Top-level `await` and `return` work inside the tool body.
+
+Use [Runtime](/runtime) for supported helpers and [Examples](/examples) for complete tool bodies.
+
+## Run
+
+Click **Run**. Fill in the inputs and run the tool. Run fields send text values. Use an MCP client to test typed number, boolean, object, or array inputs, or convert the text in your code.
+
+The **Output** panel shows the result and console messages. Running a tool can call APIs or change data, just like a client call.
+
+Save your changes before calling the tool from an AI client.

@@ -1,0 +1,39 @@
+---
+title: "Claude Desktop"
+description: "Connect your TryMCP server to Claude Desktop."
+---
+
+Open your server's **Integration** tab. Select **Claude Desktop** and copy the config. It uses `mcp-remote` as a bridge and needs Node.js with `npx` on your computer.
+
+Add the entry to `claude_desktop_config.json`. Keep any existing server entries.
+
+```json
+{
+  "mcpServers": {
+    "trymcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://your-server.trymcp.io/mcp"
+      ]
+    }
+  }
+}
+```
+
+Replace the URL with your endpoint. Restart Claude Desktop and check that your active tools appear.
+
+## Private servers
+
+For **Unlisted**, use the full URL with its secret path.
+
+For **API Key**, add these two items at the end of `args`:
+
+```json
+["--header", "Authorization: Bearer YOUR_API_KEY"]
+```
+
+Replace `YOUR_API_KEY` with the server's key. For **OAuth**, complete your provider's sign-in flow when prompted.
+
+If the connection fails, check the URL, [security mode](/security), and the server's Active switch.

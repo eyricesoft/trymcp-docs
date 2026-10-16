@@ -1,0 +1,41 @@
+---
+title: "Servers"
+description: "Create a server and manage its settings."
+---
+
+## Create a server
+
+Open **Servers** in the [dashboard](https://app.trymcp.io). Click **Create Server** and fill in these fields:
+
+| Field | What to enter |
+| --- | --- |
+| Title | A name with at least 5 characters |
+| Description | A short description, if needed |
+| Category | The closest match for your server |
+| Subdomain | An available name using lowercase letters, numbers, and hyphens |
+| Rate Limit Per Minute | Your request limit |
+| Security Type | Who can access the server |
+
+Click **Create**. Copy the endpoint from the server page.
+
+```text
+https://your-server.trymcp.io/mcp
+```
+
+Unlisted servers add a secret key to this URL. Use the full URL shown in the dashboard.
+
+## Change settings
+
+Click **Edit Server**. Update the fields you need and click **Update**.
+
+Use the **Active** switch to enable or disable access. The server page also has a **Restart Server** action.
+
+See [Security](/security) before changing access settings. Your clients may need a new URL or credentials.
+
+## Custom domain
+
+If your server already has a custom domain and your plan supports it, the server page shows its endpoint and SSL status.
+
+Use **Check SSL** while setup is pending. Wait for the status to become active before using the domain.
+
+The endpoint uses `/mcp`. For Unlisted access, include the secret path from your server URL.

@@ -1,72 +1,60 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "TryMCP",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#D9631C",
+    "light": "#EE8143",
+    "dark": "#D9631C"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg",
+    "href": "https://trymcp.io"
   },
   "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Open TryMCP",
+      "href": "https://app.trymcp.io"
+    }
+  },
   "navigation": {
-    "pages": [
+    "groups": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
+        "group": "Start here",
+        "pages": ["index", "quickstart"]
+      },
+      {
+        "group": "Build",
+        "pages": ["servers", "security", "tools", "runtime", "secrets", "examples"]
+      },
+      {
+        "group": "Check",
+        "pages": ["logs-and-analytics"]
+      },
+      {
+        "group": "Connect",
+        "pages": ["connect/claude-desktop", "connect/cursor-and-vscode", "connect/windsurf-and-cline"]
       }
     ],
     "global": {
       "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
+        {"anchor": "Dashboard", "href": "https://app.trymcp.io", "icon": "gauge"},
+        {"anchor": "Website", "href": "https://trymcp.io", "icon": "globe"}
       ]
     }
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:support@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
-    ]
-  },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/trymcp",
+      "linkedin": "https://www.linkedin.com/company/trymcp",
+      "instagram": "https://instagram.com/trymcp"
     }
-  }
+  },
+  "background": {
+    "color": {"light": "#F3F4F0", "dark": "#131410"}
+  },
+  "appearance": {"default": "system"}
 }

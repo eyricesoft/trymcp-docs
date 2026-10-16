@@ -1,0 +1,100 @@
+---
+title: "Runtime"
+description: "The helpers available inside a tool."
+---
+
+Tools run in an isolated JavaScript context. Use the built-in SDK for network and database calls. You cannot install packages inside a tool.
+
+## Inputs and secrets
+
+| Value | Use |
+| --- | --- |
+| `params` | Tool inputs, such as `params.userId` |
+| `env` | Server secrets, such as `env.API_KEY` |
+| `console` | `log()`, `warn()`, and `error()` |
+
+Return a string or a JSON-compatible value. TryMCP sends the result to the client as text.
+
+## HTTP
+
+`sdk.http()` accepts `method`, `url`, `headers`, and `body`. The default method is `GET`. URLs must use HTTPS. Private network targets are blocked.
+
+```javascript
+const response = await sdk.http({
+  url: "https://api.example.com/items",
+  headers: { Authorization: `Bearer ${env.API_KEY}` },
+});
+
+if (!response.ok) {
+  throw new Error(`API returned ${response.status}`);
+}
+
+return response.json();
+```
+
+Replace the example URL with your API. Add `API_KEY` as a secret.
+
+| Response value | Type |
+| --- | --- |
+| `response.status` | HTTP status number |
+| `response.ok` | Success boolean |
+| `response.headers` | Response headers object |
+| `response.body()` | Raw response string |
+| `response.json()` | Parsed JSON value |
+
+HTTP errors do not throw by themselves. Check `ok` or `status`. Call `json()` only when the body is JSON.
+
+## Database
+
+Use `sdk.db()` to open a connection. The examples use PostgreSQL (`pg`) and MySQL (`mysql2`). The database must be reachable from TryMCP. Private network targets are blocked.
+
+```javascript
+const db = await sdk.db({
+  type: "pg",
+  connection: {
+    host: env.DB_HOST,
+    port: Number(env.DB_PORT || 5432),
+    database: env.DB_NAME,
+    user: env.DB_USER,
+    password: env.DB_PASSWORD,
+  },
+});
+
+try {
+  return await db.select("orders", { user_id: params.userId });
+} finally {
+  await db.destroy();
+}
+```
+
+Add the five `DB_` secrets above and a required string input named `userId`.
+
+| Method | Use |
+| --- | --- |
+| `db.select(table, conditions)` | Read rows using equality filters |
+| `db.query(sql, bindings)` | Run SQL with `?` value bindings |
+| `db.destroy()` | Close the connection |
+
+Use `db.query()` for inserts, updates, and deletes. Keep SQL and table names in your code. Pass input values through bindings.
+
+PostgreSQL query results are returned as rows directly. Do not read a `.rows` property. Use `RETURNING` when a PostgreSQL write needs to return data.
+
+## Lodash
+
+Use `sdk.lodash` to filter, group, and sort data. `template()` is disabled.
+
+```javascript
+return sdk.lodash.uniqBy(params.items, "id");
+```
+
+This example needs a required array parameter named `items`.
+
+## Logs
+
+```javascript
+console.log("Tool started");
+
+return { ok: true };
+```
+
+Console messages appear in Output during a run. Do not print secrets or return them to the client.
